@@ -1,10 +1,7 @@
 # This workflow builds a package with Maven and publishes it to GitHub Packages.
 # For more information see: https://github.com/actions/setup-java/blob/main/docs/advanced-usage.md#apache-maven-with-a-settings-path
 
-name: Maven Package
-
-env:
-  RELEASE_VERSION: 19.4.0
+name: Maven Build and Publish with Deployment Management
 
 on:
   push:
@@ -18,6 +15,9 @@ jobs:
     permissions:
       contents: read
       packages: write
+    outputs:
+      build_version: ${{ steps.build-version-step.outputs.build_version }}
+
 
     steps:
     - uses: actions/checkout@v5
@@ -30,10 +30,14 @@ jobs:
         settings-path: ${{ github.workspace }} # location for the settings.xml file
 
     - name: Set build version
+      id: build-version-step
       shell: bash
       run: |
-        build_version="${RELEASE_VERSION}-build.${GITHUB_RUN_NUMBER}"
+        # Extract version by stripping the "releases/" prefix from the branch name
+        release_version="${GITHUB_REF_NAME#releases/}"
+        build_version="${release_version}.${GITHUB_RUN_NUMBER}"
         mvn -B versions:set -DnewVersion="$build_version" -DgenerateBackupPoms=false
+        echo "build_version=$build_version" >> "$GITHUB_OUTPUT"
 
     - name: Publish to GitHub Packages Apache Maven
       run: mvn -B deploy -s "$GITHUB_WORKSPACE/settings.xml"
