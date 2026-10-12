@@ -10,16 +10,6 @@ on:
   push:
     branches:
       - main
-    tags:
-      - 'v*'
-  pull_request:
-  workflow_dispatch:
-    inputs:
-      publish:
-        description: Publish the package to GitHub Packages
-        required: true
-        default: false
-        type: boolean
 
 jobs:
   build:
@@ -27,6 +17,7 @@ jobs:
     runs-on: ubuntu-24.04
     permissions:
       contents: read
+      packages: write
 
     steps:
     - uses: actions/checkout@v5
@@ -41,57 +32,8 @@ jobs:
     - name: Set build version
       shell: bash
       run: |
-        if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
-          tag_version="${GITHUB_REF_NAME#v}"
-          pom_version="$(mvn -q help:evaluate -Dexpression=project.version -DforceStdout)"
-
-          if [[ "$pom_version" == *-SNAPSHOT || "$tag_version" != "$pom_version" ]]; then
-            echo "Tag version ($tag_version) does not match the non-SNAPSHOT Maven version ($pom_version)."
-            exit 1
-          fi
-        else
-          build_version="${RELEASE_VERSION}-build.${GITHUB_RUN_NUMBER}"
-          mvn -B versions:set -DnewVersion="$build_version" -DgenerateBackupPoms=false
-        fi
-
-    - name: Build with Maven
-      run: mvn -B verify --file pom.xml
-
-  publish:
-    if: >-
-      (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')) ||
-      (github.event_name == 'workflow_dispatch' && inputs.publish)
-    needs: build
-    runs-on: ubuntu-24.04
-    permissions:
-      contents: read
-      packages: write
-
-    steps:
-    - uses: actions/checkout@v5
-    - name: Set up JDK 25
-      uses: actions/setup-java@v5
-      with:
-        java-version: '25'
-        distribution: 'temurin'
-        server-id: github
-        settings-path: ${{ github.workspace }}
-
-    - name: Set publish version
-      shell: bash
-      run: |
-        if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
-          tag_version="${GITHUB_REF_NAME#v}"
-          pom_version="$(mvn -q help:evaluate -Dexpression=project.version -DforceStdout)"
-
-          if [[ "$pom_version" == *-SNAPSHOT || "$tag_version" != "$pom_version" ]]; then
-            echo "Tag version ($tag_version) does not match the non-SNAPSHOT Maven version ($pom_version)."
-            exit 1
-          fi
-        else
-          build_version="${RELEASE_VERSION}-build.${GITHUB_RUN_NUMBER}"
-          mvn -B versions:set -DnewVersion="$build_version" -DgenerateBackupPoms=false
-        fi
+        build_version="${RELEASE_VERSION}-build.${GITHUB_RUN_NUMBER}"
+        mvn -B versions:set -DnewVersion="$build_version" -DgenerateBackupPoms=false
 
     - name: Publish to GitHub Packages Apache Maven
       run: mvn -B deploy -s "$GITHUB_WORKSPACE/settings.xml"
