@@ -76,6 +76,7 @@ jobs:
           -s "$GITHUB_WORKSPACE/settings.xml" \
           -DremoteRepositories=github::default::https://maven.pkg.github.com/rajkumarsrikanth/demo-thymeleaf \
           -Dartifact=${{ needs.build.outputs.build_group_id }}:${{ needs.build.outputs.build_artifact_id }}:${{ needs.build.outputs.build_version }} \
+          -Dtransitive=false \
           -Ddest=$GITHUB_WORKSPACE/app.jar
       env:
         GITHUB_TOKEN: ${{ github.token }}
