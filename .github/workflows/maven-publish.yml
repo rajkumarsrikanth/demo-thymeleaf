@@ -30,6 +30,13 @@ jobs:
         server-id: github # Value of the distributionManagement/repository/id field of the pom.xml
         settings-path: ${{ github.workspace }} # location for the settings.xml file
 
+    # Generates and submits the deep Maven dependency tree to GitHub
+    - name: Submit Dependency Snapshot
+      uses: advanced-security/maven-dependency-submission-action@v6
+      with:
+        # Use the settings.xml configured in the setup-java step
+        settings-file: ${{ github.workspace }}/settings.xml
+
     - name: Set build version
       id: build-version-step
       shell: bash
