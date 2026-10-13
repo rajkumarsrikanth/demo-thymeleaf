@@ -13,7 +13,7 @@ jobs:
 
     runs-on: ubuntu-24.04
     permissions:
-      contents: read
+      contents: write
       packages: write
     outputs:
       build_version: ${{ steps.build-version-step.outputs.build_version }}
